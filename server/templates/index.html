@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boom Scroll - Self-destructing Messages</title>
+    <style>
+        :root {
+            --color-bg: #1e1b4b;
+            --color-bg-dark: #0f0d2c;
+            --color-primary: #6366f1;
+            --color-secondary: #a855f7;
+            --color-accent: #ec4899;
+            --color-text: #e0e7ff;
+            --color-text-light: #c7d2fe;
+            --color-border: #4338ca;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, var(--color-bg-dark), var(--color-bg));
+            color: var(--color-text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+        
+        main {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        
+        @media (min-width: 768px) {
+            main {
+                flex-direction: row;
+            }
+        }
+        
+        .message-feed {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+            padding: 1rem;
+        }
+        
+        @media (min-width: 768px) {
+            .message-feed {
+                width: 50%;
+            }
+        }
+        
+        .message-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            animation: scroll 60s linear infinite;
+        }
+        
+        @keyframes scroll {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-50%);
+            }
+        }
+        
+        .message-card {
+            background-color: rgba(30, 27, 75, 0.6);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .message-card.peeking {
+            border-color: #3b82f6;
+            background-color: rgba(30, 27, 75, 0.8);
+        }
+        
+        .message-card.blasting {
+            border-color: #ec4899;
+            background-color: rgba(30, 27, 75, 0.8);
+        }
+        
+        .message-card.booming {
+            border-color: #ef4444;
+            background-color: rgba(30, 27, 75, 0.8);
+            animation: shake 0.5s linear;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        .message-content {
+            font-family: monospace;
+            color: var(--color-text-light);
+            margin-bottom: 0.5rem;
+            word-break: break-all;
+        }
+        
+        .message-timer {
+            width: 100%;
+            height: 4px;
+            background-color: rgba(99, 102, 241, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+        
+        .timer-bar {
+            height: 100%;
+            background-color: var(--color-primary);
+            transition: width 1s linear;
+        }
+        
+        .message-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--color-text-light);
+        }
+        
+        .message-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .pitch-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        @media (min-width: 768px) {
+            .pitch-section {
+                width: 50%;
+            }
+        }
+        
+        .headline {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+        }
+        
+        @media (min-width: 768px) {
+            .headline {
+                font-size: 5rem;
+            }
+        }
+        
+        .headline-small {
+            font-size: 2rem;
+            background: linear-gradient(to right, #c084fc, #a855f7, #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .headline-boom {
+            font-size: 4rem;
+            background: linear-gradient(to right, #f97316, #ef4444, #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: pulse 2s infinite;
+        }
+        
+        @media (min-width: 768px) {
+            .headline-boom {
+                font-size: 6rem;
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.3));
+            }
+            50% {
+                filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.7));
+            }
+        }
+        
+        .description {
+            font-size: 1.125rem;
+            color: var(--color-text-light);
+            max-width: 32rem;
+            margin: 0 auto 2rem;
+        }
+        
+        .cta-button {
+            background: linear-gradient(to right, #ec4899, #8b5cf6);
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(236, 72, 153, 0.4);
+        }
+        
+        footer {
+            width: 100%;
+            background-color: rgba(30, 27, 75, 0.5);
+            backdrop-filter: blur(8px);
+            padding: 0.75rem 0;
+            border-top: 1px solid rgba(67, 56, 202, 0.5);
+        }
+        
+        .ticker {
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        
+        .ticker-content {
+            display: inline-block;
+            animation: ticker 30s linear infinite;
+        }
+        
+        @keyframes ticker {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+        
+        .ticker-item {
+            display: inline-block;
+            padding: 0 2rem;
+            color: var(--color-text-light);
+        }
+        
+        .ticker-separator {
+            display: inline-block;
+            margin: 0 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <!-- Left Side: Message Feed -->
+        <section class="message-feed" id="messageFeed">
+            <div class="message-container" id="messageContainer">
+                <!-- Messages will be dynamically inserted here -->
+            </div>
+        </section>
+        
+        <!-- Right Side: The Pitch -->
+        <section class="pitch-section">
+            <h1 class="headline">
+                <span class="headline-small">Blah Blah</span>
+                <br>
+                <span class="headline-boom">BOOM!</span>
+            </h1>
+            
+            <p class="description">
+                Send self-destructing messages that vanish forever or pay to reveal secrets before they explode.
+            </p>
+            
+            <button class="cta-button">Bla Bla</button>
+        </section>
+    </main>
+    
+    <!-- Footer -->
+    <footer>
+        <div class="ticker">
+            <div class="ticker-content" id="tickerContent">
+                <!-- Ticker items will be dynamically inserted here -->
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        // Sample data for demonstration
+        const sampleMessages = [
+            {
+                id: 1,
+                encryptedText: "X8f$jL@p2&nZ7*qR9#mT5!vC3^gB1",
+                decryptedText: "I saw him at the club last night...",
+                timeLeft: 120,
+                peekPrice: 0.1,
+                blastPrice: 1.0
+            },
+            {
+                id: 2,
+                encryptedText: "K4d#sP6@wF8*jH2!mN9^vX3&cL5",
+                decryptedText: "Don't tell anyone but I'm planning to...",
+                timeLeft: 180,
+                peekPrice: 0.2,
+                blastPrice: 2.0
+            },
+            {
+                id: 3,
+                encryptedText: "B7g#rT2@pL5*mN9!sX4^vF6&jD3",
+                decryptedText: "The password for the account is...",
+                timeLeft: 90,
+                peekPrice: 0.1,
+                blastPrice: 1.0
+            },
+            {
+                id: 4,
+                encryptedText: "P3f#jL7@sD5*qR2!mT9^vC4&gB8",
+                decryptedText: "I can't believe she said that about...",
+                timeLeft: 150,
+                peekPrice: 0.2,
+                blastPrice: 1.5
+            },
+            {
+                id: 5,
+                encryptedText: "M6h#rT9@pL3*nZ7!sX2^vF4&jD1",
+                decryptedText: "Meet me at the secret location...",
+                timeLeft: 210,
+                peekPrice: 0.3,
+                blastPrice: 2.5
+            }
+        ];
+        
+        const sampleStats = [
+            "Vault #672 blasted for 1 SOL—3k views!",
+            "User @cryptokitty peeked 5 messages today",
+            "Message #1337 exploded with 42 witnesses",
+            "Vault #420 earned 6.9 SOL this week",
+            "New record: 12 simultaneous booms!",
+            "User @satoshi just created a 10 SOL message",
+            "Vault #888 blasted for 2.5 SOL—10k views!",
+            "Message #2048 survived for 3 days before boom",
+            "User @vitalik peeked 3 messages in 1 minute",
+            "Total platform booms: 31,415 and counting"
+        ];
+        
+        // Generate random encrypted-looking text
+        function generateEncryptedText(length) {
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+{}|:<>?~`-=[]\\;',./";
+            return Array.from({ length }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
+        }
+        
+        // Format time remaining
+        function formatTimeRemaining(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')} left to boom`;
+        }
+        
+        // Initialize message feed
+        function initMessageFeed() {
+            const container = document.getElementById('messageContainer');
+            
+            // Create initial messages
+            for (let i = 0; i < 20; i++) {
+                const messageTemplate = sampleMessages[i % sampleMessages.length];
+                const messageElement = createMessageElement({
+                    ...messageTemplate,
+                    id: i + 1,
+                    timeLeft: Math.floor(Math.random() * 180) + 30
+                });
+                container.appendChild(messageElement);
+            }
+            
+            // Update timers and add animations
+            setInterval(updateMessages, 1000);
+            setInterval(triggerRandomAnimation, 5000);
+        }
+        
+        // Create a message element
+        function createMessageElement(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message-card';
+            messageDiv.dataset.id = message.id;
+            messageDiv.dataset.timeLeft = message.timeLeft;
+            messageDiv.dataset.status = 'scrolling';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = message.encryptedText;
+            
+            const timerDiv = document.createElement('div');
+            timerDiv.className = 'message-timer';
+            
+            const timerBar = document.createElement('div');
+            timerBar.className = 'timer-bar';
+            timerBar.style.width = `${(message.timeLeft / 210) * 100}%`;
+            timerDiv.appendChild(timerBar);
+            
+            const metaDiv = document.createElement('div');
+            metaDiv.className = 'message-meta';
+            
+            const timeSpan = document.createElement('span');
+            timeSpan.textContent = formatTimeRemaining(message.timeLeft);
+            
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'message-actions';
+            
+            const peekSpan = document.createElement('span');
+            peekSpan.textContent = `Peek: ${message.peekPrice} SOL`;
+            
+            const blastSpan = document.createElement('span');
+            blastSpan.textContent = `Blast: ${message.blastPrice} SOL`;
+            
+            actionsDiv.appendChild(peekSpan);
+            actionsDiv.appendChild(document.createTextNode(' | '));
+            actionsDiv.appendChild(blastSpan);
+            
+            metaDiv.appendChild(timeSpan);
+            metaDiv.appendChild(actionsDiv);
+            
+            messageDiv.appendChild(contentDiv);
+            messageDiv.appendChild(timerDiv);
+            messageDiv.appendChild(metaDiv);
+            
+            return messageDiv;
+        }
+        
+        // Update message timers and states
+        function updateMessages() {
+            const messages = document.querySelectorAll('.message-card');
+            
+            messages.forEach(message => {
+                const status = message.dataset.status;
+                if (status === 'destroyed') return;
+                
+                let timeLeft = parseInt(message.dataset.timeLeft) - 1;
+                message.dataset.timeLeft = timeLeft;
+                
+                const timerBar = message.querySelector('.timer-bar');
+                timerBar.style.width = `${(timeLeft / 210) * 100}%`;
+                
+                const timeSpan = message.querySelector('.message-meta span');
+                
+                if (timeLeft <= 0 && status !== 'booming') {
+                    // Trigger boom animation
+                    message.dataset.status = 'booming';
+                    message.className = 'message-card booming';
+                    
+                    const content = message.querySelector('.message-content');
+                    content.textContent = 'Lost Forever!';
+                    content.style.color = '#ef4444';
+                    
+                    timeSpan.textContent = 'BOOM!';
+                    timeSpan.style.color = '#ef4444';
+                    
+                    // Remove actions
+                    const actions = message.querySelector('.message-actions');
+                    actions.innerHTML = '';
+                    
+                    // Add explosion effect
+                    const explosion = document.createElement('div');
+                    explosion.className = 'explosion-effect';
+                    message.appendChild(explosion);
+                    
+                    // Mark as destroyed after animation
+                    setTimeout(() => {
+                        message.dataset.status = 'destroyed';
+                        message.style.opacity = '0.5';
+                    }, 3000);
+                } else if (status === 'scrolling') {
+                    timeSpan.textContent = formatTimeRemaining(timeLeft);
+                }
+            });
+            
+            // Add new message occasionally
+            if (Math.random() < 0.1) {
+                addNewMessage();
+            }
+        }
+        
+        // Add a new message to the feed
+        function addNewMessage() {
+            const container = document.getElementById('messageContainer');
+            const messageTemplate = sampleMessages[Math.floor(Math.random() * sampleMessages.length)];
+            
+            const messageElement = createMessageElement({
+                ...messageTemplate,
+                id: Date.now(),
+                encryptedText: generateEncryptedText(30),
+                timeLeft: Math.floor(Math.random() * 180) + 30
+            });
+            
+            container.appendChild(messageElement);
+            
+            // Remove old messages if too many
+            const messages = document.querySelectorAll('.message-card');
+            if (messages.length > 30) {
+                container.removeChild(messages[0]);
+            }
+        }
+        
+        // Trigger random animations (peek or blast)
+        function triggerRandomAnimation() {
+            const messages = document.querySelectorAll('.message-card[data-status="scrolling"]');
+            if (messages.length === 0) return;
+            
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            const animationType = Math.random() < 0.7 ? 'peeking' : 'blasting';
+            
+            randomMessage.dataset.status = animationType;
+            randomMessage.className = `message-card ${animationType}`;
+            
+            const content = randomMessage.querySelector('.message-content');
+            const originalText = content.textContent;
+            
+            // Get corresponding decrypted text
+            const messageId = parseInt(randomMessage.dataset.id) % sampleMessages.length;
+            const decryptedText = sampleMessages[messageId].decryptedText;
+            
+            if (animationType === 'peeking') {
+                content.textContent = decryptedText;
+                content.style.color = '#3b82f6';
+                
+                // Reset after animation
+                setTimeout(() => {
+                    content.textContent = originalText;
+                    content.style.color = '';
+                    randomMessage.className = 'message-card';
+                    randomMessage.dataset.status = 'scrolling';
+                }, 3000);
+            } else {
+                content.textContent = decryptedText;
+                content.style.color = '#ec4899';
+                
+                // Add "went BOOM!" effect
+                const boomEffect = document.createElement('div');
+                boomEffect.textContent = 'went BOOM!';
+                boomEffect.style.position = 'absolute';
+                boomEffect.style.top = '50%';
+                boomEffect.style.left = '50%';
+                boomEffect.style.transform = 'translate(-50%, -50%)';
+                boomEffect.style.color = '#ec4899';
+                boomEffect.style.fontWeight = 'bold';
+                boomEffect.style.fontSize = '1.25rem';
+                boomEffect.style.opacity = '0';
+                boomEffect.style.animation = 'fadeInOut 1.5s ease-in-out';
+                
+                randomMessage.appendChild(boomEffect);
+                
+                // Reset after animation
+                setTimeout(() => {
+                    randomMessage.removeChild(boomEffect);
+                    content.textContent = originalText;
+                    content.style.color = '';
+                    randomMessage.className = 'message-card';
+                    randomMessage.dataset.status = 'scrolling';
+                }, 3000);
+            }
+        }
+        
+        // Initialize ticker
+        function initTicker() {
+            const tickerContent = document.getElementById('tickerContent');
+            
+            // Create ticker items
+            const allStats = [...sampleStats, ...sampleStats]; // Duplicate for continuous scrolling
+            
+            allStats.forEach(stat => {
+                const itemSpan = document.createElement('span');
+                itemSpan.className = 'ticker-item';
+                itemSpan.innerHTML = `<span class="ticker-separator">•</span> ${stat} <span class="ticker-separator">•</span>`;
+                tickerContent.appendChild(itemSpan);
+            });
+        }
+        
+        // Initialize everything when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            initMessageFeed();
+            initTicker();
+        });
+    </script>
+</body>
+</html>
+
